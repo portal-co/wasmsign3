@@ -88,8 +88,8 @@ pub fn read_custom_section<E, R: Read<Error = E>>(
 }
 // #[non_exhaustive]
 pub struct CustomSection<'a, R> {
-    pub len: u64,
-    pub reader: &'a mut R,
+    len: u64,
+    reader: &'a mut R,
 }
 impl<'a, R: Read> ErrorType for CustomSection<'a, R> {
     type Error = R::Error;
@@ -102,6 +102,17 @@ impl<'a, R: Read> Read for CustomSection<'a, R> {
         let a = self.reader.read(buf)?;
         self.len -= (a as u64);
         return Ok(a);
+    }
+}
+impl<'a,R> CustomSection<'a,R>{
+    pub fn len(&self) -> u64{
+        return self.len;
+    }
+    pub fn take(self) -> Result<&'a mut R,Self>{
+        match self.len{
+            0 => Ok(self.reader),
+            _ => Err(self)
+        }
     }
 }
 #[macro_export]
