@@ -7,7 +7,7 @@ pub fn get<E>(
     reader: &mut impl Read<Error = E>,
     mut decr_read: Option<&mut u64>,
 ) -> Result<u64, ReadExactError<E>> {
-    let mut v: u64 = 0;
+    let mut value: u64 = 0;
     loop {
         for i in 0.. {
             let mut byte = [0u8; 1];
@@ -15,38 +15,38 @@ pub fn get<E>(
             if let Some(d) = decr_read.as_deref_mut() {
                 *d -= 1
             }
-            v |= ((byte[0] & 0x7f) as u64) << (i * 7);
+            value |= ((byte[0] & 0x7f) as u64) << (i * 7);
             if (byte[0] & 0x80) == 0 {
-                return Ok(v);
+                return Ok(value);
             }
         }
     }
     // Err(WSError::ParseError)
 }
 
-pub fn put<E>(writer: &mut impl Write<Error = E>, mut v: u64) -> Result<(), E> {
+pub fn put<E>(writer: &mut impl Write<Error = E>, mut value: u64) -> Result<(), E> {
     let mut byte = [0u8; 1];
     loop {
-        byte[0] = (v & 0x7f) as u8;
-        if v > 0x7f {
+        byte[0] = (value & 0x7f) as u8;
+        if value > 0x7f {
             byte[0] |= 0x80;
         }
         writer.write_all(&byte)?;
-        v >>= 7;
-        if v == 0 {
+        value >>= 7;
+        if value == 0 {
             return Ok(());
         }
     }
 }
-pub fn put_pad<E>(writer: &mut impl Write<Error = E>, mut v: u64) -> Result<(), E> {
+pub fn put_pad<E>(writer: &mut impl Write<Error = E>, mut value: u64) -> Result<(), E> {
     let mut byte = [0u8; 1];
     for _ in 0..10 {
-        byte[0] = (v & 0x7f) as u8;
-        if v > 0x7f {
+        byte[0] = (value & 0x7f) as u8;
+        if value > 0x7f {
             byte[0] |= 0x80;
         }
         writer.write_all(&byte)?;
-        v >>= 7;
+        value >>= 7;
     }
     Ok(())
 }
@@ -55,32 +55,32 @@ pub fn read_custom_section<E, R: Read<Error = E>>(
     name_hash: Option<[u8; 32]>,
 ) -> Result<CustomSection<'_, R>, ReadExactError<E>> {
     loop {
-        let mut b = 0u8;
-        reader.read_exact(slice::from_mut(&mut b))?;
-        let mut g = get(reader, None)?;
-        match b {
+        let mut ty = 0u8;
+        reader.read_exact(slice::from_mut(&mut ty))?;
+        let mut len = get(reader, None)?;
+        match ty {
             0 => match name_hash.as_ref() {
-                None => return Ok(CustomSection { len: g, reader }),
-                Some(n) => {
-                    let a = get(reader, Some(&mut g))?;
-                    let mut s = sha3::Sha3_256::default();
-                    for _ in 0..a {
-                        reader.read_exact(slice::from_mut(&mut b))?;
-                        s.update(&[b]);
+                None => return Ok(CustomSection { len, reader }),
+                Some(name_hash) => {
+                    let name_len = get(reader, Some(&mut len))?;
+                    let mut hash = sha3::Sha3_256::default();
+                    for _ in 0..name_len {
+                        reader.read_exact(slice::from_mut(&mut ty))?;
+                        hash.update(&[ty]);
                     }
-                    let s: [u8; 32] = s.finalize().into();
-                    if s == *n {
-                        return Ok(CustomSection { len: g, reader });
+                    let hash: [u8; 32] = hash.finalize().into();
+                    if hash == *name_hash {
+                        return Ok(CustomSection { len, reader });
                     } else {
-                        while g != 0 {
-                            reader.read_exact(slice::from_mut(&mut b))?;
+                        while len != 0 {
+                            reader.read_exact(slice::from_mut(&mut ty))?;
                         }
                     }
                 }
             },
             _ => {
-                while g != 0 {
-                    reader.read_exact(slice::from_mut(&mut b))?;
+                while len != 0 {
+                    reader.read_exact(slice::from_mut(&mut ty))?;
                 }
             }
         }
