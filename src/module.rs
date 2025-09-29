@@ -131,6 +131,8 @@ impl<'a, R, T> CustomSection<'a, R, T> {
 #[macro_export]
 macro_rules! read_custom_section_with_name {
     ($a:expr, $b:expr) => {
-        $crate::module::read_custom_section($a, &mut |a| a == $crate::__::sha3_literal!($b))
+        $crate::module::read_custom_section($a, &mut |a| {
+            (a == $crate::__::sha3_literal!($b)).then(|| ())
+        })
     };
 }
