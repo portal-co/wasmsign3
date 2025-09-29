@@ -3,9 +3,9 @@ use core::slice;
 use embedded_io::{ErrorKind, ErrorType, Read, ReadExactError, Write};
 use sha3::Digest;
 
-pub fn get<E>(
-    reader: &mut impl Read<Error = E>,
-    mut decr_read: Option<&mut u64>,
+pub fn get<E: embedded_io::Error>(
+    reader: &mut (dyn Read<Error = E> + '_),
+    mut decr_read: Option<&mut (dyn FnMut() + '_)>,
 ) -> Result<u64, ReadExactError<E>> {
     let mut value: u64 = 0;
     loop {
@@ -13,7 +13,7 @@ pub fn get<E>(
             let mut byte = [0u8; 1];
             reader.read_exact(&mut byte)?;
             if let Some(d) = decr_read.as_deref_mut() {
-                *d -= 1
+                d();
             }
             value |= ((byte[0] & 0x7f) as u64) << (i * 7);
             if (byte[0] & 0x80) == 0 {
@@ -24,7 +24,10 @@ pub fn get<E>(
     // Err(WSError::ParseError)
 }
 
-pub fn put<E>(writer: &mut impl Write<Error = E>, mut value: u64) -> Result<(), E> {
+pub fn put<E: embedded_io::Error>(
+    writer: &mut (dyn Write<Error = E> + '_),
+    mut value: u64,
+) -> Result<(), E> {
     let mut byte = [0u8; 1];
     loop {
         byte[0] = (value & 0x7f) as u8;
@@ -38,7 +41,10 @@ pub fn put<E>(writer: &mut impl Write<Error = E>, mut value: u64) -> Result<(), 
         }
     }
 }
-pub fn put_pad<E>(writer: &mut impl Write<Error = E>, mut value: u64) -> Result<(), E> {
+pub fn put_pad<E: embedded_io::Error>(
+    writer: &mut (dyn Write<Error = E> + '_),
+    mut value: u64,
+) -> Result<(), E> {
     let mut byte = [0u8; 1];
     for _ in 0..10 {
         byte[0] = (value & 0x7f) as u8;
@@ -50,7 +56,7 @@ pub fn put_pad<E>(writer: &mut impl Write<Error = E>, mut value: u64) -> Result<
     }
     Ok(())
 }
-pub fn read_custom_section<'a, E, R: Read<Error = E>, T>(
+pub fn read_custom_section<'a, E: embedded_io::Error, R: Read<Error = E>, T>(
     reader: &'a mut R,
     name_hash: &mut (dyn FnMut([u8; 32]) -> Option<T> + '_),
 ) -> Result<CustomSection<'a, R, T>, ReadExactError<E>> {
@@ -60,7 +66,12 @@ pub fn read_custom_section<'a, E, R: Read<Error = E>, T>(
         let mut len = get(reader, None)?;
         match ty {
             0 => {
-                let name_len = get(reader, Some(&mut len))?;
+                let name_len = get(
+                    reader,
+                    Some(&mut || {
+                        len -= 1;
+                    }),
+                )?;
                 let mut hash = sha3::Sha3_256::default();
                 for _ in 0..name_len {
                     reader.read_exact(slice::from_mut(&mut ty))?;
@@ -93,7 +104,7 @@ pub struct CustomSection<'a, R, T = ()> {
     reader: &'a mut R,
     pub payload: T,
 }
-impl<'a, R: Read, T> ErrorType for CustomSection<'a, R, T> {
+impl<'a, R: ErrorType, T> ErrorType for CustomSection<'a, R, T> {
     type Error = R::Error;
 }
 impl<'a, R: Read, T> Read for CustomSection<'a, R, T> {
@@ -120,9 +131,6 @@ impl<'a, R, T> CustomSection<'a, R, T> {
 #[macro_export]
 macro_rules! read_custom_section_with_name {
     ($a:expr, $b:expr) => {
-        $crate::module::read_custom_section(
-            $a,
-            &mut |a|a==$crate::__::sha3_literal!($b),
-        )
+        $crate::module::read_custom_section($a, &mut |a| a == $crate::__::sha3_literal!($b))
     };
 }
