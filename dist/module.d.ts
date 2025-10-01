@@ -1,8 +1,8 @@
-export declare function customSections(a: Uint8Array): Generator<{
+export declare function customSections<A extends ArrayBufferLike = ArrayBufferLike>(a: Uint8Array<A>): Generator<{
     name: string;
-    section: Uint8Array;
+    section: Uint8Array<A>;
 }, void, void>;
-export declare function readLEB(a: Uint8Array): {
+export declare function readLEB<A extends ArrayBufferLike = ArrayBufferLike>(a: Uint8Array<A>): {
     value: bigint;
-    array: Uint8Array;
+    array: Uint8Array<A>;
 };

@@ -1,6 +1,6 @@
-export function* customSections(
-  a: Uint8Array
-): Generator<{ name: string; section: Uint8Array }, void, void> {
+export function* customSections<A extends ArrayBufferLike = ArrayBufferLike>(
+  a: Uint8Array<A>
+): Generator<{ name: string; section: Uint8Array<A> }, void, void> {
   for (;;) {
     if (a.length === 0) return;
     const ga = a[0];
@@ -23,7 +23,9 @@ export function* customSections(
     }
   }
 }
-export function readLEB(a: Uint8Array): { value: bigint; array: Uint8Array } {
+export function readLEB<A extends ArrayBufferLike = ArrayBufferLike>(
+  a: Uint8Array<A>
+): { value: bigint; array: Uint8Array<A> } {
   let value = 0n;
   for (let i = 0; ; i++) {
     value |= BigInt(a[i] & 0x7f) << BigInt(i * 7);
