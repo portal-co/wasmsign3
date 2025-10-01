@@ -1,0 +1,40 @@
+{
+  "name": "@portal-solutions/wasmsign3",
+  "version": "0.1.0",
+  "description": "wasmsign2 but slh-dsa",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/portal-co/wasmsign3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MPL-2.0",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/portal-co/wasmsign3/issues"
+  },
+  "homepage": "https://github.com/portal-co/wasmsign3#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "zshy": "^0.4.2"
+  },
+  "zshy": {
+    "exports": {
+      "./module": "module.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./module": {
+      "types": "./dist/module.d.cts",
+      "import": "./dist/module.js",
+      "require": "./dist/module.cjs"
+    }
+  }
+}
