@@ -6,10 +6,7 @@ export function* customSections(array) {
         let size;
         ({ value: size, array } = readLEB(array.subarray(1)));
         if (ga !== 0) {
-            while (size !== 0n) {
-                array = array.subarray(1);
-                size--;
-            }
+            array = array.subarray(Number(size));
             continue;
         }
         else {
