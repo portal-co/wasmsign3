@@ -27,7 +27,7 @@ export function readLEB(a) {
     let value = 0n;
     for (let i = 0;; i++) {
         value |= BigInt(a[i] & 0x7f) << BigInt(i * 7);
-        if (a[i] & 0x80)
+        if (!(a[i] & 0x80))
             return { value, array: a.subarray(i + 1) };
     }
 }
