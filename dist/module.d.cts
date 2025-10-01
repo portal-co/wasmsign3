@@ -5,4 +5,5 @@ export declare function customSections<A extends ArrayBufferLike = ArrayBufferLi
 export declare function readLEB<A extends ArrayBufferLike = ArrayBufferLike>(array: Uint8Array<A>): {
     value: bigint;
     array: Uint8Array<A>;
+    read: number;
 };

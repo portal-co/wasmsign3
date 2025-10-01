@@ -10,8 +10,9 @@ export function* customSections<A extends ArrayBufferLike = ArrayBufferLike>(
       array = array.subarray(Number(size));
       continue;
     } else {
-      let nameSize;
-      ({ value: nameSize, array } = readLEB(array));
+      let nameSize, read;
+      ({ value: nameSize, array, read } = readLEB(array));
+      size -= BigInt(read);
       const nameBytes = array.subarray(0, Number(nameSize));
       array = array.subarray(Number(nameSize));
       const name = new TextDecoder().decode(nameBytes);
@@ -22,10 +23,11 @@ export function* customSections<A extends ArrayBufferLike = ArrayBufferLike>(
 }
 export function readLEB<A extends ArrayBufferLike = ArrayBufferLike>(
   array: Uint8Array<A>
-): { value: bigint; array: Uint8Array<A> } {
+): { value: bigint; array: Uint8Array<A>; read: number } {
   let value = 0n;
   for (let i = 0; ; i++) {
     value |= BigInt(array[i] & 0x7f) << BigInt(i * 7);
-    if (!(array[i] & 0x80)) return { value, array: array.subarray(i + 1) };
+    if (!(array[i] & 0x80))
+      return { value, array: array.subarray(i + 1), read: i };
   }
 }

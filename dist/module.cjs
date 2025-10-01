@@ -14,8 +14,9 @@ function* customSections(array) {
             continue;
         }
         else {
-            let nameSize;
-            ({ value: nameSize, array } = readLEB(array));
+            let nameSize, read;
+            ({ value: nameSize, array, read } = readLEB(array));
+            size -= BigInt(read);
             const nameBytes = array.subarray(0, Number(nameSize));
             array = array.subarray(Number(nameSize));
             const name = new TextDecoder().decode(nameBytes);
@@ -29,6 +30,6 @@ function readLEB(array) {
     for (let i = 0;; i++) {
         value |= BigInt(array[i] & 0x7f) << BigInt(i * 7);
         if (!(array[i] & 0x80))
-            return { value, array: array.subarray(i + 1) };
+            return { value, array: array.subarray(i + 1), read: i };
     }
 }
