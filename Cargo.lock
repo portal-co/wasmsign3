@@ -132,9 +132,20 @@ name = "portal-solutions-wasmsign3"
 version = "0.1.0"
 dependencies = [
  "embedded-io",
+ "portal-solutions-wasmsign3-module",
  "sha3",
  "sha3-literal",
  "slh-dsa",
+ "typenum",
+]
+
+[[package]]
+name = "portal-solutions-wasmsign3-module"
+version = "0.1.0"
+dependencies = [
+ "embedded-io",
+ "sha3",
+ "sha3-literal",
  "typenum",
 ]
 
