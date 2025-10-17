@@ -66,10 +66,10 @@ pub fn read_custom_section<'a, E: embedded_io::Error, R: Read<Error = E>, T>(
     name_hash: &mut (dyn FnMut([u8; 32]) -> Option<T> + '_),
 ) -> Result<CustomSection<'a, R, T>, ReadExactError<E>> {
     loop {
-        let mut ty = 0u8;
-        reader.read_exact(slice::from_mut(&mut ty))?;
+        let mut byte = 0u8;
+        reader.read_exact(slice::from_mut(&mut byte))?;
         let mut len = get(reader, None)?;
-        match ty {
+        match byte {
             0 => {
                 let name_len = get(
                     reader,
@@ -79,8 +79,8 @@ pub fn read_custom_section<'a, E: embedded_io::Error, R: Read<Error = E>, T>(
                 )?;
                 let mut hash = sha3::Sha3_256::default();
                 for _ in 0..name_len {
-                    reader.read_exact(slice::from_mut(&mut ty))?;
-                    hash.update(&[ty]);
+                    reader.read_exact(slice::from_mut(&mut byte))?;
+                    hash.update(&[byte]);
                 }
                 let hash: [u8; 32] = hash.finalize().into();
                 if let Some(payload) = name_hash(hash) {
@@ -91,13 +91,13 @@ pub fn read_custom_section<'a, E: embedded_io::Error, R: Read<Error = E>, T>(
                     });
                 } else {
                     while len != 0 {
-                        reader.read_exact(slice::from_mut(&mut ty))?;
+                        reader.read_exact(slice::from_mut(&mut byte))?;
                     }
                 }
             }
             _ => {
                 while len != 0 {
-                    reader.read_exact(slice::from_mut(&mut ty))?;
+                    reader.read_exact(slice::from_mut(&mut byte))?;
                 }
             }
         }
