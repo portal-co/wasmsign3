@@ -1,5 +1,7 @@
 #![no_std]
 #![feature(generic_const_exprs)]
+extern crate alloc;
+pub mod target;
 pub mod __ {
     pub use core;
     pub use sha3_literal::sha3_literal;
